@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from providers.base import EmbeddingRequest
-from providers.mistral import llm_provider
-from providers.vector_store import vector_store, CollectionConfig
+from app.providers.base import EmbeddingRequest
+from app.providers.mistral import llm_provider
+from app.providers.vector_store import vector_store, CollectionConfig, Document
 
 router = APIRouter()
 
@@ -58,8 +58,6 @@ class UpsertBody(BaseModel):
 @router.post("/upsert")
 async def upsert(body: UpsertBody):
     try:
-        from providers.vector_store import Document
-
         cfg = CollectionConfig(**body.config)
         docs = [Document(**d) for d in body.documents]
         await vector_store.upsert(body.tenant_id, cfg, docs)

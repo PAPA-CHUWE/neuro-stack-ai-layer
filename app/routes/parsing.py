@@ -1,9 +1,10 @@
 import os
+import tempfile
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from parsers.cv_parser import SUPPORTED_MIME_TYPES, cv_parser
+from app.parsers.cv_parser import SUPPORTED_MIME_TYPES, cv_parser
 
 router = APIRouter()
 
@@ -23,8 +24,6 @@ async def parse_cv(
         suffix = ".pdf"
     else:
         suffix = ".txt"
-
-    import tempfile
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         content = await file.read()

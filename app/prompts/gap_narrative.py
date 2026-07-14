@@ -20,7 +20,7 @@ GAP_NARRATIVE_SYSTEM_PROMPT = lambda tone: (
     "2. Do NOT invent statistics, percentages, or outcomes not present in the input.\n"
     "3. Do NOT mention that you are an AI or language model.\n"
     "4. Structure the output as structured JSON with summary and sections.\n"
-    f"5. Be encouraging but factual \u2014 the learner must understand exactly what to study and why.\n"
+    "5. Be encouraging but factual \u2014 the learner must understand exactly what to study and why.\n"
     f'6. If a gap is marked as "critical", emphasize it appropriately in the {tone} tone.'
 )
 

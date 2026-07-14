@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from providers.base import CompletionRequest
-from providers.mistral import llm_provider
+from app.providers.base import CompletionRequest
+from app.providers.mistral import llm_provider
 
 router = APIRouter()
 

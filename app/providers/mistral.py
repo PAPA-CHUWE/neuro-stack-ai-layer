@@ -2,8 +2,8 @@ import logging
 
 import httpx
 
-from config import settings
-from providers.base import (
+from app.config import settings
+from app.providers.base import (
     CompletionRequest,
     CompletionResponse,
     EmbeddingRequest,

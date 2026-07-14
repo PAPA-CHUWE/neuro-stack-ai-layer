@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from validators.json_schema import (
+from app.validators.json_schema import (
     validate,
     validate_cv_extraction,
     validate_feedback_draft,

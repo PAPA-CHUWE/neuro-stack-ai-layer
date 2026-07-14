@@ -1,13 +1,12 @@
 import json
 import logging
-import os
 import shutil
 from pathlib import Path
 
 import numpy as np
 from pydantic import BaseModel
 
-from config import settings
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -171,7 +170,6 @@ class _Collection:
 
     @staticmethod
     def _eval_filter(expr: str, fields: dict) -> bool:
-        """Minimal filter evaluator for `field == 'value'` expressions."""
         try:
             if "==" in expr:
                 left, right = expr.split("==", 1)
