@@ -18,9 +18,15 @@ class ZvecConfig(BaseModel):
     base_path: str = os.getenv("ZVEC_BASE_PATH", "/tmp/zvec-data")
 
 
+class MongoConfig(BaseModel):
+    uri: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+    db_name: str = os.getenv("MONGODB_DB_NAME", "e-lms")
+
+
 class Settings(BaseModel):
     mistral: MistralConfig = MistralConfig()
     zvec: ZvecConfig = ZvecConfig()
+    mongo: MongoConfig = MongoConfig()
     cors_origins: list[str] = os.getenv("CORS_ORIGINS", "*").split(",")
 
 
