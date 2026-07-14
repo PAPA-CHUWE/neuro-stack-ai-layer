@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: neurostack-ai-layer
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MISTRAL_API_KEY
+        sync: false
+      - key: MISTRAL_MODEL
+        value: mistral-large-latest
+      - key: MISTRAL_EMBED_MODEL
+        value: mistral-embed
+      - key: ZVEC_BASE_PATH
+        value: /tmp/zvec-data
+      - key: CORS_ORIGINS
+        value: "*"
