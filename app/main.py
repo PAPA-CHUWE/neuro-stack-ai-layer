@@ -24,6 +24,11 @@ app.include_router(parsing.router, prefix="/parsing", tags=["Parsing"])
 app.include_router(validation.router, prefix="/validation", tags=["Validation"])
 
 
+@app.get("/")
+async def root():
+    return {"service": "neurostack-ai-layer", "status": "ok"}
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
