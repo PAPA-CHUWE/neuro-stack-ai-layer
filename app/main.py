@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from app.config import settings
-from app.routes import llm, embeddings, parsing, validation
+from app.routes import llm, embeddings, parsing, validation, skill_goals
 
 app = FastAPI(
     title="NeuroStack AI Layer",
@@ -25,6 +25,7 @@ app.include_router(llm.router, prefix="/llm", tags=["LLM"])
 app.include_router(embeddings.router, prefix="/embeddings", tags=["Embeddings"])
 app.include_router(parsing.router, prefix="/parsing", tags=["Parsing"])
 app.include_router(validation.router, prefix="/validation", tags=["Validation"])
+app.include_router(skill_goals.router, prefix="/skill-goals", tags=["Skill Goals"])
 
 
 @app.get("/")

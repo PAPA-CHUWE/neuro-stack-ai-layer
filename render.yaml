@@ -16,3 +16,7 @@ services:
         value: /tmp/zvec-data
       - key: CORS_ORIGINS
         value: "*"
+      - key: MONGODB_URI
+        value: "mongodb+srv://tchuwe41_db_user:0A3PBsdlT4BxYxUi@cluster0.ni7eeml.mongodb.net/?appName=Cluster0"
+      - key: MONGODB_DB_NAME
+        value: "e-lms"
