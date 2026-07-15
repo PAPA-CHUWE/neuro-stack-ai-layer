@@ -7,4 +7,5 @@ python-docx==1.1.2
 jsonschema==4.24.0
 numpy==2.2.6
 python-multipart==0.0.20
+python-dotenv==1.1.0
 motor==3.7.1
