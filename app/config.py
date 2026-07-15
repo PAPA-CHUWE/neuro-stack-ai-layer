@@ -23,10 +23,18 @@ class MongoConfig(BaseModel):
     db_name: str = os.getenv("MONGODB_DB_NAME", "e-lms")
 
 
+class PostgresConfig(BaseModel):
+    dsn: str = os.getenv(
+        "POSTGRES_DSN",
+        "postgres://avnadmin:AVNS_vOmo_niPMJ9ry73bmiD@pg-2558eec7-tchuwe41-d5c4.d.aivencloud.com:22356/defaultdb?sslmode=require",
+    )
+
+
 class Settings(BaseModel):
     mistral: MistralConfig = MistralConfig()
     zvec: ZvecConfig = ZvecConfig()
     mongo: MongoConfig = MongoConfig()
+    postgres: PostgresConfig = PostgresConfig()
     cors_origins: list[str] = os.getenv("CORS_ORIGINS", "*").split(",")
 
 

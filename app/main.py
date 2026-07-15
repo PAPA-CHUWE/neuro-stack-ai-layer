@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -7,10 +9,19 @@ load_dotenv()
 from app.config import settings
 from app.routes import llm, embeddings, parsing, validation, skill_goals
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from app.db.pg import init_pg_tables
+    await init_pg_tables()
+    yield
+
+
 app = FastAPI(
     title="NeuroStack AI Layer",
     version="0.0.1",
     docs_url="/docs",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

@@ -20,3 +20,5 @@ services:
         value: "mongodb+srv://tchuwe41_db_user:0A3PBsdlT4BxYxUi@cluster0.ni7eeml.mongodb.net/?appName=Cluster0"
       - key: MONGODB_DB_NAME
         value: "e-lms"
+      - key: POSTGRES_DSN
+        value: "postgres://avnadmin:AVNS_vOmo_niPMJ9ry73bmiD@pg-2558eec7-tchuwe41-d5c4.d.aivencloud.com:22356/defaultdb?sslmode=require"
