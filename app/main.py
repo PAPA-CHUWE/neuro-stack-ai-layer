@@ -12,8 +12,11 @@ from app.routes import llm, embeddings, parsing, validation, skill_goals
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from app.db.pg import init_pg_tables
-    await init_pg_tables()
+    try:
+        from app.db.pg import init_pg_tables
+        await init_pg_tables()
+    except Exception as e:
+        print(f"Postgres init skipped: {e}")
     yield
 
 
