@@ -38,4 +38,11 @@ class Settings(BaseModel):
     cors_origins: list[str] = os.getenv("CORS_ORIGINS", "*").split(",")
 
 
+def get_cors_origins() -> list[str]:
+    raw = os.getenv("CORS_ORIGINS", "*")
+    if raw == "*":
+        return ["*"]
+    return [origin.strip() for origin in raw.split(",") if origin.strip()]
+
+
 settings = Settings()

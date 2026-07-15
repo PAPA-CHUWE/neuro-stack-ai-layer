@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from app.config import settings
+from app.config import settings, get_cors_origins
 from app.routes import llm, embeddings, parsing, validation, skill_goals
 
 
@@ -26,8 +26,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
+    allow_origin_regex=".*" if get_cors_origins() == ["*"] else None,
+    allow_origins=get_cors_origins() if get_cors_origins() != ["*"] else [],
+    allow_credentials=get_cors_origins() != ["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
