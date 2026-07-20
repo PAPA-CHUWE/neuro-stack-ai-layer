@@ -1,0 +1,1 @@
+from app.features.course_metadata.infrastructure.adapters import get_ai_provider
