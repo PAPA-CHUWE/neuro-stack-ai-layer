@@ -3,18 +3,217 @@
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Query
 
 from app.shared.database import get_pg_pool
+from app.shared.providers.base import CompletionRequest
+from app.shared.providers.mistral import llm_provider
+from app.shared.utils.json_parse import extract_json
 from app.models.skill_goal import (
     CreateSkillGoalRequest, GoalStatus, SkillGoalResponse,
     StepStatus, doc_to_response,
 )
+from app.features.skill_goals.schemas import (
+    PlanFromGoalBody, PlanFromGoalResponse, DiagnoseRiskBody, DiagnoseRiskResponse,
+    AssessPerformanceBody, AssessPerformanceResponse,
+)
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+PLAN_FROM_GOAL_SYSTEM_PROMPT = """You are a learning-path planning agent for an LMS platform.
+
+Given a learner's stated career goal in their own words, their current skills, and a catalog of
+available courses, produce a structured learning plan.
+
+Rules:
+1. Infer a concise target role name from the stated goal (e.g. "AI Engineer", "Data Analyst").
+2. Identify the skill gaps between the learner's current skills and what the target role
+   plausibly requires. Estimate currentLevel and requiredLevel (Beginner/Intermediate/Advanced)
+   for each gap skill.
+3. Design a course sequence from the available courses that closes those gaps, ordered
+   foundational to advanced. Only use courseIds that appear in the provided catalog — never
+   invent one.
+4. Each course must include a brief reason tied to a specific gap skill.
+5. Return at most max_courses courses.
+6. Return ONLY valid JSON. No markdown, no conversational text.
+
+Output format:
+{
+  "targetRole": "Role Name",
+  "gaps": [
+    {"skill": "Skill Name", "currentLevel": "Beginner", "requiredLevel": "Intermediate"}
+  ],
+  "pathTitle": "Learning Path for Role Name",
+  "pathDescription": "A personalized path to close your skill gaps",
+  "courses": [
+    {"courseId": "id", "courseTitle": "Title", "sortOrder": 1, "reason": "Addresses gap in X", "gapSkill": "Skill Name"}
+  ]
+}"""
+
+
+@router.post("/plan-from-goal", response_model=PlanFromGoalResponse)
+async def plan_from_goal(body: PlanFromGoalBody):
+    skills_text = "\n".join(
+        f"- {s.get('skill', 'Unknown')}: {s.get('proficiencyLevel', 'Beginner')} (source: {s.get('source', 'unknown')})"
+        for s in body.current_skills
+    ) or "- (no current skill signal available)"
+    courses_text = "\n".join(
+        f"- {c.get('courseId', 'unknown')}: {c.get('title', 'Untitled')} — covers: {', '.join(c.get('skills', []))}"
+        for c in body.available_courses
+    )
+
+    try:
+        result = await llm_provider.complete(
+            CompletionRequest(
+                system_prompt=PLAN_FROM_GOAL_SYSTEM_PROMPT,
+                user_prompt=(
+                    f"Stated goal: {body.goal_text}\n\nCurrent skills:\n{skills_text}\n\n"
+                    f"Available courses:\n{courses_text}\n\n"
+                    f"Return at most {body.max_courses} courses."
+                ),
+                temperature=0.2, max_tokens=1536, json_mode=True,
+            )
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    try:
+        data = extract_json(result.content)
+    except (json.JSONDecodeError, ValueError) as e:
+        logger.warning("Failed to parse plan-from-goal response: %s", e)
+        raise HTTPException(status_code=502, detail=f"LLM returned invalid JSON: {e}")
+
+    return PlanFromGoalResponse(
+        target_role=data.get("targetRole", "General learner"),
+        gaps=data.get("gaps", []),
+        path_title=data.get("pathTitle", "Learning Path"),
+        path_description=data.get("pathDescription", ""),
+        courses=data.get("courses", []),
+        model=result.model,
+        prompt_tokens=result.prompt_tokens,
+        completion_tokens=result.completion_tokens,
+    )
+
+
+DIAGNOSE_RISK_SYSTEM_PROMPT = """You are a risk-intervention agent for an LMS platform.
+
+The CAUSE has already been classified deterministically from real progress data —
+never second-guess or restate it as uncertain. Your job is only to explain it
+clearly to the learner and propose one concrete remediation step.
+
+Rules:
+1. Write a short (2-3 sentence) diagnosis addressed to the learner, explaining
+   why they've been flagged, grounded in the specific signals provided.
+2. Write a short (2-3 sentence) remediation recommendation: one concrete next
+   action (e.g. revisit a specific course, adjust pace, a short refresher).
+3. Be direct and encouraging, not alarming — this is a nudge, not a warning.
+4. Return ONLY valid JSON. No markdown, no conversational text.
+
+Output format:
+{
+  "diagnosis": "...",
+  "remediation": "..."
+}"""
+
+
+@router.post("/diagnose-risk", response_model=DiagnoseRiskResponse)
+async def diagnose_risk(body: DiagnoseRiskBody):
+    user_prompt = (
+        f"Target role: {body.role_name}\n"
+        f"Classified cause: {body.cause}\n"
+        f"Signals: {json.dumps(body.signals)}\n"
+        f"Plan courses: {', '.join(body.step_titles) or '(none)'}\n\n"
+        "Write the diagnosis and remediation."
+    )
+
+    try:
+        result = await llm_provider.complete(
+            CompletionRequest(
+                system_prompt=DIAGNOSE_RISK_SYSTEM_PROMPT,
+                user_prompt=user_prompt,
+                temperature=0.3, max_tokens=512, json_mode=True,
+            )
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    try:
+        data = extract_json(result.content)
+    except (json.JSONDecodeError, ValueError) as e:
+        logger.warning("Failed to parse diagnose-risk response: %s", e)
+        raise HTTPException(status_code=502, detail=f"LLM returned invalid JSON: {e}")
+
+    return DiagnoseRiskResponse(
+        diagnosis=data.get("diagnosis", ""),
+        remediation=data.get("remediation", ""),
+        model=result.model,
+        prompt_tokens=result.prompt_tokens,
+        completion_tokens=result.completion_tokens,
+    )
+
+
+ASSESS_PERFORMANCE_SYSTEM_PROMPT = """You are the Assessment Agent for an LMS platform.
+
+A learner has failed an assessment tied to a certification-track milestone after
+exhausting their attempts. That determination — the fail, the exhausted attempts,
+and the certification-track impact — has already been made deterministically from
+real assessment data. Never second-guess or restate it as uncertain. Your only job
+is to write a short, factual narrative for the human reviewer who will decide
+whether to adjust the learner's roadmap.
+
+Rules:
+1. Write 2-3 sentences summarizing the situation: the course/milestone, the score
+   versus the passing score, and why it needs review (certification-track impact,
+   so it wasn't auto-adjusted).
+2. Suggest one concrete option the reviewer could consider (e.g. extra practice
+   before a retake, an alternate assessment, extending the deadline) without
+   deciding for them.
+3. Be neutral and factual — this narrative goes to a reviewer, not the learner.
+4. Return ONLY valid JSON. No markdown, no conversational text.
+
+Output format:
+{"narrative": "..."}"""
+
+
+@router.post("/assess-performance", response_model=AssessPerformanceResponse)
+async def assess_performance(body: AssessPerformanceBody):
+    user_prompt = (
+        f"Course / milestone: {body.course_title}\n"
+        f"Target role: {body.role_name}\n"
+        f"Score: {body.score} (passing: {body.passing_score})\n\n"
+        "Write the reviewer narrative."
+    )
+
+    try:
+        result = await llm_provider.complete(
+            CompletionRequest(
+                system_prompt=ASSESS_PERFORMANCE_SYSTEM_PROMPT,
+                user_prompt=user_prompt,
+                temperature=0.3, max_tokens=384, json_mode=True,
+            )
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    try:
+        data = extract_json(result.content)
+    except (json.JSONDecodeError, ValueError) as e:
+        logger.warning("Failed to parse assess-performance response: %s", e)
+        raise HTTPException(status_code=502, detail=f"LLM returned invalid JSON: {e}")
+
+    return AssessPerformanceResponse(
+        narrative=data.get("narrative", ""),
+        model=result.model,
+        prompt_tokens=result.prompt_tokens,
+        completion_tokens=result.completion_tokens,
+    )
 
 
 def _now():

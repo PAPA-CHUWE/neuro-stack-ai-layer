@@ -8,11 +8,11 @@ from datetime import datetime, timezone
 logger = logging.getLogger(__name__)
 
 
-def extract_json(text: str) -> dict:
-    """Extract JSON from LLM response text, handling markdown fences and extra text."""
+def extract_json(text: str) -> dict | list:
+    """Extract JSON (object or array) from LLM response text, handling markdown fences and extra text."""
     # Try direct parse first
     text = text.strip()
-    if text.startswith("{"):
+    if text.startswith("{") or text.startswith("["):
         try:
             return json.loads(text)
         except json.JSONDecodeError:
@@ -26,13 +26,16 @@ def extract_json(text: str) -> dict:
         except json.JSONDecodeError:
             pass
 
-    # Try finding first { ... } block
+    # Try finding the first { ... } or [ ... ] block, whichever appears first
     brace_match = re.search(r"\{.*\}", text, re.DOTALL)
-    if brace_match:
+    bracket_match = re.search(r"\[.*\]", text, re.DOTALL)
+    candidates = [m for m in (brace_match, bracket_match) if m]
+    candidates.sort(key=lambda m: m.start())
+    for match in candidates:
         try:
-            return json.loads(brace_match.group(0))
+            return json.loads(match.group(0))
         except json.JSONDecodeError:
-            pass
+            continue
 
     logger.warning("Failed to extract JSON from LLM response: %s", text[:200])
     return {}

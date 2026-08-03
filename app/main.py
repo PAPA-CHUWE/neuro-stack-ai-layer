@@ -31,6 +31,10 @@ from app.features.traces.router import router as traces_router
 from app.features.evaluations.router import router as evaluations_router
 from app.features.prompt_management.router import router as prompts_router
 from app.features.course_metadata.router import router as course_metadata_router
+from app.features.video.router import router as video_router
+from app.features.grading.router import router as grading_router
+from app.features.career_readiness.router import router as career_readiness_router
+from app.features.insights.router import router as insights_router
 
 
 @asynccontextmanager
@@ -74,6 +78,10 @@ app.include_router(traces_router, prefix="/traces", tags=["AI Traces"])
 app.include_router(evaluations_router, prefix="/evaluations", tags=["AI Evaluations"])
 app.include_router(prompts_router, prefix="/prompts", tags=["Prompt Versioning"])
 app.include_router(course_metadata_router, prefix="/api/v1/ai/courses", tags=["Course Metadata"])
+app.include_router(video_router, prefix="/video", tags=["Video"])
+app.include_router(grading_router, prefix="/grading", tags=["Grading"])
+app.include_router(career_readiness_router, prefix="/career-readiness", tags=["Career Readiness"])
+app.include_router(insights_router, prefix="/insights", tags=["Insights"])
 
 
 @app.get("/")
