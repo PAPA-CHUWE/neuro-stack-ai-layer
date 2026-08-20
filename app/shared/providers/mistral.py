@@ -36,6 +36,7 @@ class MistralProvider(LlmProvider):
             "model": self._cfg.model,
             "messages": [
                 {"role": "system", "content": request.system_prompt},
+                *([m for m in request.messages] if request.messages else []),
                 {"role": "user", "content": request.user_prompt},
             ],
             "temperature": request.temperature,
@@ -176,6 +177,7 @@ class MistralProvider(LlmProvider):
             "model": self._cfg.model,
             "messages": [
                 {"role": "system", "content": request.system_prompt},
+                *([m for m in request.messages] if request.messages else []),
                 {"role": "user", "content": request.user_prompt},
             ],
             "temperature": request.temperature,

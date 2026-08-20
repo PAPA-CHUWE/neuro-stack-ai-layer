@@ -22,6 +22,7 @@ class MindQueryBody(BaseModel):
     category: str | None = None
     user_name: str | None = None
     conversation_id: str | None = None
+    conversation_history: list[dict] | None = None
     pageContext: PageContext | None = None
 
 
@@ -34,6 +35,7 @@ class MindStreamBody(BaseModel):
     category: str | None = None
     user_name: str | None = None
     conversation_id: str | None = None
+    conversation_history: list[dict] | None = None
     pageContext: PageContext | None = None
 
 

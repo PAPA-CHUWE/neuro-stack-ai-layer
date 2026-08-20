@@ -9,6 +9,7 @@ class CompletionRequest(BaseModel):
     temperature: float = 0.2
     max_tokens: int = 1024
     json_mode: bool = False
+    messages: list[dict] | None = None
 
 
 class CompletionResponse(BaseModel):

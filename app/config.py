@@ -26,7 +26,7 @@ class MongoConfig(BaseModel):
 class PostgresConfig(BaseModel):
     dsn: str = os.getenv(
         "POSTGRES_DSN",
-        "postgres://avnadmin:AVNS_vOmo_niPMJ9ry73bmiD@pg-2558eec7-tchuwe41-d5c4.d.aivencloud.com:22356/defaultdb?sslmode=require",
+        "postgres://terrencechuwe@localhost:5432/neurostack",
     )
 
 

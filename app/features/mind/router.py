@@ -78,6 +78,18 @@ NAVIGATION_REGISTRY: dict[str, str] = {
 MUTATE_REGISTRY: dict[str, str] = {}
 
 
+def _history_to_messages(history: list[dict] | None) -> list[dict]:
+    if not history:
+        return []
+    messages = []
+    for turn in history:
+        role = turn.get("role")
+        content = turn.get("content", "")
+        if role in ("user", "assistant") and content:
+            messages.append({"role": role, "content": content})
+    return messages
+
+
 def _fast_path_intent(message: str) -> MindMode | None:
     """Cheap regex check before any LLM call."""
     stripped = message.strip()
@@ -264,6 +276,7 @@ async def _mind_query_inner(body: MindQueryBody, start: float) -> MindResponse:
                 user_prompt=f"User message: {body.question}\n\nNote: You had trouble classifying this message. Ask the user to rephrase or clarify what they need help with.",
                 temperature=0.3,
                 max_tokens=256,
+                messages=_history_to_messages(body.conversation_history),
             )
         )
         latency_ms = int((time.monotonic() - start) * 1000)
@@ -311,6 +324,7 @@ async def _mind_query_inner(body: MindQueryBody, start: float) -> MindResponse:
                 user_prompt=user_prompt,
                 temperature=0.3,
                 max_tokens=256,
+                messages=_history_to_messages(body.conversation_history),
             )
         )
         if body.conversation_id:
@@ -342,6 +356,7 @@ async def _mind_query_inner(body: MindQueryBody, start: float) -> MindResponse:
                 user_prompt=user_prompt,
                 temperature=0.1,
                 max_tokens=256,
+                messages=_history_to_messages(body.conversation_history),
             )
         )
         latency_ms = int((time.monotonic() - start) * 1000)
@@ -416,6 +431,7 @@ async def _mind_query_inner(body: MindQueryBody, start: float) -> MindResponse:
                 user_prompt=user_content,
                 temperature=0.2,
                 max_tokens=1024,
+                messages=_history_to_messages(body.conversation_history),
             )
         )
         latency_ms = int((time.monotonic() - start) * 1000)
@@ -475,6 +491,7 @@ async def _mind_query_inner(body: MindQueryBody, start: float) -> MindResponse:
             user_prompt=user_content,
             temperature=0.3,
             max_tokens=1024,
+            messages=_history_to_messages(body.conversation_history),
         )
     )
     latency_ms = int((time.monotonic() - start) * 1000)
@@ -599,6 +616,7 @@ async def _mind_stream_inner(body: MindStreamBody, start: float):
             user_prompt=f"User message: {body.question}\n\nNote: You had trouble classifying this message. Ask the user to rephrase or clarify what they need help with.",
             temperature=0.3,
             max_tokens=256,
+            messages=_history_to_messages(body.conversation_history),
         )
 
         async def clarify_stream():
@@ -647,6 +665,7 @@ async def _mind_stream_inner(body: MindStreamBody, start: float):
             user_prompt=user_prompt,
             temperature=0.3,
             max_tokens=256,
+            messages=_history_to_messages(body.conversation_history),
         )
 
         async def conv_stream():
@@ -679,6 +698,7 @@ async def _mind_stream_inner(body: MindStreamBody, start: float):
             user_prompt=user_prompt,
             temperature=0.1,
             max_tokens=256,
+            messages=_history_to_messages(body.conversation_history),
         )
 
         async def platform_stream():
@@ -766,6 +786,7 @@ async def _mind_stream_inner(body: MindStreamBody, start: float):
         user_prompt=user_content,
         temperature=0.2,
         max_tokens=1024,
+        messages=_history_to_messages(body.conversation_history),
     )
 
     async def knowledge_stream():

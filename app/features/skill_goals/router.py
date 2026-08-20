@@ -109,12 +109,12 @@ never second-guess or restate it as uncertain. Your job is only to explain it
 clearly to the learner and propose one concrete remediation step.
 
 Rules:
-1. Write a short (2-3 sentence) diagnosis addressed to the learner, explaining
-   why they've been flagged, grounded in the specific signals provided.
-2. Write a short (2-3 sentence) remediation recommendation: one concrete next
-   action (e.g. revisit a specific course, adjust pace, a short refresher).
+1. Write exactly 2 sentences for diagnosis: explain why they've been flagged,
+   grounded in the specific signals provided.
+2. Write exactly 2 sentences for remediation: one concrete next action.
 3. Be direct and encouraging, not alarming — this is a nudge, not a warning.
-4. Return ONLY valid JSON. No markdown, no conversational text.
+4. Never mention course IDs. Use the course names provided in the plan courses list.
+5. Return ONLY valid JSON. No markdown, no conversational text.
 
 Output format:
 {
@@ -138,7 +138,7 @@ async def diagnose_risk(body: DiagnoseRiskBody):
             CompletionRequest(
                 system_prompt=DIAGNOSE_RISK_SYSTEM_PROMPT,
                 user_prompt=user_prompt,
-                temperature=0.3, max_tokens=512, json_mode=True,
+                temperature=0.3, max_tokens=256, json_mode=True,
             )
         )
     except Exception as e:

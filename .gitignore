@@ -3,3 +3,6 @@ __pycache__/
 .env
 voices/
 .venv/
+
+# macOS
+.DS_Store
